@@ -1,0 +1,51 @@
+services:
+  mysqldb:
+    image: mysql:8
+    platform: linux/amd64
+    container_name: mysql-db
+    environment:
+      MYSQL_ROOT_PASSWORD: employee
+      MYSQL_DATABASE: empdb
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - springboot-mysql-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-pemployee"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  backend:
+    image: kritika1803/dedocker-backend:latest
+    platform: linux/amd64
+    container_name: empspringboot
+    ports:
+      - "1998:1999"
+    depends_on:
+      mysqldb:
+        condition: service_healthy
+    restart: on-failure
+    networks:
+      - springboot-mysql-net
+
+  frontend:
+    image: kritika1803/dedocker-frontend:latest
+    platform: linux/amd64
+    container_name: empreact
+    ports:
+      - "3002:80"
+    depends_on:
+      - backend
+    restart: on-failure
+    networks:
+      - springboot-mysql-net
+
+volumes:
+  mysql_data:
+
+networks:
+  springboot-mysql-net:
